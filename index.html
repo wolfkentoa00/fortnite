@@ -183,8 +183,9 @@
         <button id="start-btn">DROP IN</button>
     </div>
 
-    <!-- Three.js from CDN -->
+    <!-- Three.js and PointerLockControls from CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/PointerLockControls.js"></script>
 
     <script>
         /**
@@ -227,20 +228,10 @@
         const startScreen = document.getElementById('start-screen');
         const messageArea = document.getElementById('message-area');
 
+        // Logic to handle clicking the button
         startBtn.addEventListener('click', () => {
-            init();
-            animate();
-            document.body.requestPointerLock();
-            startScreen.style.display = 'none';
-        });
-
-        // Pointer Lock Handling
-        document.addEventListener('pointerlockchange', () => {
-            if (document.pointerLockElement === document.body) {
-                // Locked
-            } else {
-                // Unlocked (Pause logic could go here)
-                if(!isDead) startScreen.style.display = 'flex';
+            if (controls) {
+                controls.lock();
             }
         });
 
@@ -279,14 +270,19 @@
             environment.push(floor);
 
             // --- Player Model (Simplified Soldier) ---
-            // We use a group for the player, but controls operate on a camera rig
-            
-            // NOTE: In PointerLockControls, the camera is the "player". 
-            // We will create a visible body that follows the camera position for shadows/visuals (if 3rd person).
-            // For true 3rd person with PointerLock in Three.js without complex physics engines, 
-            // we often parent the camera to a pivot.
             
             controls = new THREE.PointerLockControls(camera, document.body);
+
+            // Listen for lock/unlock events to toggle menu
+            controls.addEventListener('lock', () => {
+                startScreen.style.display = 'none';
+            });
+            
+            controls.addEventListener('unlock', () => {
+                if(!isDead) startScreen.style.display = 'flex';
+            });
+
+            scene.add(controls.getObject());
 
             // Create a gun model attached to camera
             createWeapon();
@@ -451,8 +447,9 @@
         }
 
         function onMouseDown(event) {
-            if (document.pointerLockElement !== document.body) return;
-            if (event.button === 0) shoot(); // Left click
+            if (controls && controls.isLocked) {
+                if (event.button === 0) shoot(); // Left click
+            }
         }
 
         function onWindowResize() {
@@ -744,7 +741,7 @@
             const time = performance.now();
             const delta = (time - prevTime) / 1000;
 
-            if (controls.isLocked && !isDead) {
+            if (controls && controls.isLocked && !isDead) {
                 
                 // Physics / Movement
                 velocity.x -= velocity.x * 10.0 * delta;
@@ -789,6 +786,10 @@
             prevTime = time;
             renderer.render(scene, camera);
         }
+
+        // Initialize immediately
+        init();
+        animate();
 
     </script>
 </body>
