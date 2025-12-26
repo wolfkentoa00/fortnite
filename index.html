@@ -3,78 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scanner QR Code</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <title>Daily QR Code</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            background-color: #121212; /* Dark background */
+            color: #ffffff;
+            font-family: 'Courier New', Courier, monospace; /* Monospace for coding vibe */
             display: flex;
             flex-direction: column;
-            align-items: center;
             justify-content: center;
+            align-items: center;
             height: 100vh;
-            background-color: #f0f0f0;
             margin: 0;
         }
+
         .container {
             text-align: center;
-            background: white;
+            background: #1e1e1e;
             padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 1px solid #333;
         }
+
         h1 {
-            color: #333;
-            font-size: 24px;
-            margin-bottom: 10px;
-        }
-        p {
-            color: #666;
-            margin-bottom: 25px;
-        }
-        #qrcode {
-            display: flex;
-            justify-content: center;
+            font-size: 1.5rem;
             margin-bottom: 20px;
+            color: #00ff9d; /* Matrix green accent */
         }
-        .print-btn {
-            padding: 10px 20px;
-            background-color: #007bff;
-            color: white;
-            border: none;
+
+        #qr-image {
+            width: 200px;
+            height: 200px;
+            border: 10px solid white; /* White border for better scanning contrast */
             border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
         }
-        .print-btn:hover {
-            background-color: #0056b3;
+
+        .data-text {
+            margin-top: 15px;
+            font-size: 1.2rem;
+            opacity: 0.7;
         }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h1>Scanner Command</h1>
-        <p>Sequence: 18076 &rarr; ENTER &rarr; 41</p>
+        <h1>Daily QR Code</h1>
+        <img id="qr-image" src="" alt="Loading QR Code..." />
         
-        <div id="qrcode"></div>
-
-        <button class="print-btn" onclick="window.print()">Print QR Code</button>
+        <div class="data-text">Data: <span id="current-day"></span></div>
     </div>
 
-    <script type="text/javascript">
-        // The data string: 18076 + Carriage Return (\r) + 41
-        // \r is the standard ASCII character for "Enter" in barcode scanners.
-        var qrData = "18076\r41";
+    <script>
+        // 1. Create an array of days (first 3 letters, lowercase as requested)
+        // Note: new Date().getDay() returns 0 for Sunday, 1 for Monday, etc.
+        const days = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
 
-        var qrcode = new QRCode(document.getElementById("qrcode"), {
-            text: qrData,
-            width: 256,
-            height: 256,
-            colorDark : "#000000",
-            colorLight : "#ffffff",
-            correctLevel : QRCode.CorrectLevel.H
-        });
+        // 2. Get the current date index (0-6)
+        const dateIndex = new Date().getDay();
+
+        // 3. Get the string for today (e.g., "fri")
+        const todayStr = days[dateIndex];
+
+        // 4. Update the text on the screen
+        document.getElementById('current-day').innerText = `"${todayStr}"`;
+
+        // 5. Generate the QR code using the QR Server API
+        // We inject the 'todayStr' variable into the API URL
+        const qrSize = "200x200";
+        const apiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=${qrSize}&data=${todayStr}`;
+
+        // 6. Set the image source
+        document.getElementById('qr-image').src = apiUrl;
     </script>
 
 </body>
