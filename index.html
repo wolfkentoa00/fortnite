@@ -2,81 +2,176 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Daily QR Code</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Privacy Screen Beta</title>
     <style>
+        :root {
+            --ios-bg: #f2f2f7;
+            --ios-card: #ffffff;
+            --ios-blue: #007aff;
+        }
+
         body {
-            background-color: #121212; /* Dark background */
-            color: #ffffff;
-            font-family: 'Courier New', Courier, monospace; /* Monospace for coding vibe */
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--ios-bg);
+            margin: 0;
             display: flex;
             flex-direction: column;
-            justify-content: center;
-            align-items: center;
             height: 100vh;
-            margin: 0;
+            color: #000;
         }
 
-        .container {
-            text-align: center;
-            background: #1e1e1e;
-            padding: 40px;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            border: 1px solid #333;
+        .header {
+            padding: 60px 20px 20px;
+            font-size: 34px;
+            font-weight: 700;
         }
 
-        h1 {
-            font-size: 1.5rem;
+        .section-label {
+            padding: 0 20px 8px;
+            font-size: 13px;
+            color: #6e6e73;
+            text-transform: uppercase;
+        }
+
+        .settings-group {
+            background: var(--ios-card);
+            border-top: 0.5px solid #d1d1d6;
+            border-bottom: 0.5px solid #d1d1d6;
             margin-bottom: 20px;
-            color: #00ff9d; /* Matrix green accent */
         }
 
-        #qr-image {
-            width: 200px;
-            height: 200px;
-            border: 10px solid white; /* White border for better scanning contrast */
-            border-radius: 5px;
+        .row {
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 17px;
         }
 
-        .data-text {
-            margin-top: 15px;
-            font-size: 1.2rem;
-            opacity: 0.7;
+        .toggle {
+            width: 51px;
+            height: 31px;
+            background: #e9e9ea;
+            border-radius: 16px;
+            position: relative;
+            transition: 0.3s;
+        }
+
+        .toggle::after {
+            content: '';
+            position: absolute;
+            width: 27px;
+            height: 27px;
+            background: white;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+            transition: 0.3s;
+        }
+
+        .toggle.active { background: #34c759; }
+        .toggle.active::after { transform: translateX(20px); }
+
+        /* The Simulation Box */
+        #content-sample {
+            margin: 20px;
+            padding: 20px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            transition: opacity 0.3s ease;
+            position: relative;
+        }
+
+        .privacy-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.9);
+            border-radius: 12px;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
         }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <h1>Daily QR Code</h1>
-        <img id="qr-image" src="" alt="Loading QR Code..." />
-        
-        <div class="data-text">Data: <span id="current-day"></span></div>
+    <div class="header">Privacy</div>
+
+    <div class="section-label">Experimental Beta</div>
+    <div class="settings-group">
+        <div class="row" onclick="togglePrivacy()">
+            <span>Privacy Screen</span>
+            <div id="main-toggle" class="toggle"></div>
+        </div>
+    </div>
+
+    <div class="section-label">Preview Window</div>
+    <div id="content-sample">
+        <div id="overlay" class="privacy-overlay">PROTECTED</div>
+        <h3 style="margin-top:0">Sensitive Data</h3>
+        <p>This box simulates how the screen reacts when tilted. Turn your phone left or right to see the effect.</p>
+        <p><strong>Status:</strong> <span id="status-text">Inactive</span></p>
     </div>
 
     <script>
-        // 1. Create an array of days (first 3 letters, lowercase as requested)
-        // Note: new Date().getDay() returns 0 for Sunday, 1 for Monday, etc.
-        const days = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+        let isActive = false;
+        const overlay = document.getElementById('overlay');
+        const toggle = document.getElementById('main-toggle');
+        const statusText = document.getElementById('status-text');
 
-        // 2. Get the current date index (0-6)
-        const dateIndex = new Date().getDay();
+        function togglePrivacy() {
+            // Request permission for iOS Motion sensors
+            if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+                DeviceOrientationEvent.requestPermission()
+                    .then(permissionState => {
+                        if (permissionState === 'granted') {
+                            isActive = !isActive;
+                            updateUI();
+                        }
+                    });
+            } else {
+                isActive = !isActive;
+                updateUI();
+            }
+        }
 
-        // 3. Get the string for today (e.g., "fri")
-        const todayStr = days[dateIndex];
+        function updateUI() {
+            toggle.classList.toggle('active', isActive);
+            statusText.innerText = isActive ? "Monitoring Tilt..." : "Inactive";
+            if(!isActive) overlay.style.opacity = 0;
+        }
 
-        // 4. Update the text on the screen
-        document.getElementById('current-day').innerText = `"${todayStr}"`;
+        window.addEventListener('deviceorientation', (event) => {
+            if (!isActive) return;
 
-        // 5. Generate the QR code using the QR Server API
-        // We inject the 'todayStr' variable into the API URL
-        const qrSize = "200x200";
-        const apiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=${qrSize}&data=${todayStr}`;
-
-        // 6. Set the image source
-        document.getElementById('qr-image').src = apiUrl;
+            // 'gamma' is left-to-right tilt in degrees
+            const tilt = Math.abs(event.gamma);
+            
+            // If tilted more than 25 degrees, darken the box
+            if (tilt > 25) {
+                overlay.style.opacity = (tilt - 25) / 40; // Gradually darkens
+            } else {
+                overlay.style.opacity = 0;
+            }
+        });
     </script>
-
 </body>
 </html>
